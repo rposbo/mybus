@@ -38,7 +38,7 @@ function getStopListingForLocation(lat, lng){
 	var endpoint = 'https://api-argon.tfl.gov.uk/StopPoint?swLat=' + swLat + '&swLon=' + swLng + '&neLat=' + neLat + '&neLon=' + neLng + extragumf;
 
 	$.ajax({
-				type: 'POST',
+				type: 'GET',
 				url: endpoint,
 				contentType: "application/json; charset=utf-8",
 				dataType: "json",
@@ -74,7 +74,7 @@ function getBusListingForStop(stopId){
 var endpoint = 'https://api-argon.tfl.gov.uk/StopPoint/' + stopId + '/Arrivals';
 
 	$.ajax({
-		type: 'POST',
+		type: 'GET',
 		url: endpoint,
 		contentType: "application/json; charset=utf-8",
 		dataType: "json",
@@ -130,7 +130,6 @@ function expectedArrivalTimeText(expectedArrivalTime) {
 </script>
 </head>
 <body>
-<!-- <div id="hello">Using the extremely handy TFL bus countdown thingy, but <a href="http://robinosborne.co.uk/tag/tfl/" target="_blank">made for mobiles</a> by <a href="http://twitter.com/rposbo">@rposbo</a>. Tap a bus stop to get the countdown listing, tap again to refresh.</div> -->
 <div id="busListing"></div>
 <h1>Bus Stops Near You
 </h1>
