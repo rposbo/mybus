@@ -37,7 +37,9 @@ function getStopListingForLocation(lat, lng){
 	var extragumf = '&stopTypes=NaptanPublicBusCoachTram&modes=bus';
 	var endpoint = 'https://api-argon.tfl.gov.uk/StopPoint?swLat=' + swLat + '&swLon=' + swLng + '&neLat=' + neLat + '&neLon=' + neLng + extragumf;
 
-	$.get(endpoint, function(data) { displayStopListing(data.d); });
+	$.get(endpoint, function(data) { 
+        displayStopListing(data); 
+    });
 }
 
 function displayStopListing(stopListingData){
@@ -66,7 +68,9 @@ var data = $.parseJSON(stopListingData);
 
 function getBusListingForStop(stopId){
     var endpoint = 'https://api-argon.tfl.gov.uk/StopPoint/' + stopId + '/Arrivals';
-	$.get(endpoint, function(data) { displayBusListing(data.d, stopId); });
+	$.get(endpoint, function(data) { 
+        displayBusListing(data, stopId); 
+    });
 }
 
 function displayBusListing(busListingData, stopId){
