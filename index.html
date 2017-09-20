@@ -1,0 +1,150 @@
+<html>
+<head>
+<meta name="viewport" content="width=320" >
+<title>@rposbo : UNOFFICIAL Mobile TFL Bus Countdown Board</title>
+<style>
+body {font-family:calibri,verdana,tahoma,farah; font-size:12px; width:auto; max-width:100%;}
+#disclaimer {font-size:8px;}
+#disclaimer img {float:left;}
+#busListing {display:block;}
+a:visited {color:blue;}
+#stopListing a {display:block; padding: 5px;margin: .4em 0;background-color:#ecffec; text-decoration:none; color:black;}
+#stopListing a:hover {background-color:#ececff;}
+#stopListing a:active {background-color:#ffecec;}
+.time {margin-right:1em; text-align:right;}
+.clock {float:right;}
+</style>
+<script language="javascript" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script language="javascript" type="text/javascript">
+$(document).ready(function() {
+	// get lat long
+	if (navigator.geolocation){
+		navigator.geolocation.getCurrentPosition(function (position) {
+			getStopListingForLocation(position.coords.latitude,position.coords.longitude);
+		});
+	} else {
+		alert('could not get your location');
+	}
+});
+
+function getStopListingForLocation(lat, lng){
+	var swLat, swLng, neLat, neLng;
+	swLat = lat - 0.01;
+	swLng = lng - 0.01;
+	neLat = lat + 0.01;
+	neLng = lng + 0.01;
+
+	var extragumf = '&stopTypes=NaptanPublicBusCoachTram&modes=bus';
+	var endpoint = 'https://api-argon.tfl.gov.uk/StopPoint?swLat=' + swLat + '&swLon=' + swLng + '&neLat=' + neLat + '&neLon=' + neLng + extragumf;
+
+	$.ajax({
+				type: 'POST',
+				url: endpoint,
+				contentType: "application/json; charset=utf-8",
+				dataType: "json",
+				success: function(data) { displayStopListing(data.d); }
+			});
+}
+
+function displayStopListing(stopListingData){
+var data = $.parseJSON(stopListingData);
+
+	data.sort(function(a,b) {return (a.commonName > b.commonName) ? 1 : ((b.commonName > a.commonName) ? -1 : 0);} );
+	$.each(data, function(i,item){
+		var destination = "";
+		if (item.additionalProperties.length > 0)
+			for(var i=0; i<item.additionalProperties.length; i++)
+			{
+				if (item.additionalProperties[i].key == "Towards")
+					destination = 'to '+ item.additionalProperties[i].value;
+			}
+
+
+      $("<a/>")
+	  .text(item.commonName + ' (stop ' + item.stopLetter + ') ' + destination)
+	  .attr("onclick", "getBusListingForStop('" + item.id + "')")
+	  .attr("class", "stopListing")
+	  .attr("id", item.id)
+	  .attr("name","stop_" + item.id)
+	  .appendTo("#stopListing");
+    });
+}
+
+function getBusListingForStop(stopId){
+var endpoint = 'https://api-argon.tfl.gov.uk/StopPoint/' + stopId + '/Arrivals';
+
+	$.ajax({
+		type: 'POST',
+		url: endpoint,
+		contentType: "application/json; charset=utf-8",
+		dataType: "json",
+		success: function(data) { displayBusListing(data.d, stopId); }
+	});
+}
+
+function displayBusListing(busListingData, stopId){
+
+	var data = $.parseJSON(busListingData);
+	data.sort(function(a,b) {return (a.timeToStation > b.timeToStation) ? 1 : ((b.timeToStation > a.timeToStation) ? -1 : 0);} );
+
+	$("#" + stopId).children().remove();
+
+    $("<h2 />").text("Buses Due").appendTo("#" + stopId);
+
+	$.each(data, function(i,item){
+
+      $("<span/>")
+	  .text(countdownText(item.timeToStation))
+	  .attr("class", "time")
+	  .appendTo("#" + stopId);
+
+      $("<span/>")
+	  .text(item.lineName + ' to ' + item.destinationName)
+	  .attr("class", "info")
+	  .appendTo("#" + stopId);
+
+    $("<span/>")
+	  .text(expectedArrivalTimeText(item.expectedArrival))
+	  .attr("class", "clock")
+	  .appendTo("#" + stopId);
+
+      $("<br/>")
+	  .appendTo("#" + stopId);
+    });
+}
+
+function countdownText(seconds){
+	var mins = seconds/60;
+	return mins > 1 ? Math.floor(mins) + ' min' : 'due';
+}
+
+function expectedArrivalTimeText(expectedArrivalTime) {
+	if (expectedArrivalTime == null) {return "";}
+
+	var d = new Date(expectedArrivalTime);
+	var h = d.getHours() < 10 ? "0" + d.getHours() : d.getHours();
+	var m = d.getMinutes() < 10 ? "0" + d.getMinutes() : d.getMinutes();
+	return h + ":" + m;
+}
+
+</script>
+</head>
+<body>
+<!-- <div id="hello">Using the extremely handy TFL bus countdown thingy, but <a href="http://robinosborne.co.uk/tag/tfl/" target="_blank">made for mobiles</a> by <a href="http://twitter.com/rposbo">@rposbo</a>. Tap a bus stop to get the countdown listing, tap again to refresh.</div> -->
+<div id="busListing"></div>
+<h1>Bus Stops Near You
+</h1>
+<div id="stopListing"></div>
+<hr />
+<script async>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-55736935-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</body>
+</html>
