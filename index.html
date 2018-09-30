@@ -27,6 +27,8 @@ $(document).ready(function() {
 	}
 });
 
+const borrowedIds = 'app_id=8268063a&app_key=14f7f5ff5d64df2e88701cef2049c804';
+
 function getStopListingForLocation(lat, lng){
 	var swLat, swLng, neLat, neLng;
 	swLat = lat - 0.01;
@@ -34,9 +36,8 @@ function getStopListingForLocation(lat, lng){
 	neLat = lat + 0.01;
 	neLng = lng + 0.01;
 
-	var borrowedIds = 'app_id=8268063a&app_key=14f7f5ff5d64df2e88701cef2049c804';
 	var extragumf = '&stopTypes=NaptanPublicBusCoachTram&modes=bus&' + borrowedIds;
-	var endpoint = 'https://api-radon.tfl.gov.uk/StopPoint?swLat=' + swLat + '&swLon=' + swLng + '&neLat=' + neLat + '&neLon=' + neLng + extragumf;
+	var endpoint = 'https://api.tfl.gov.uk/StopPoint?swLat=' + swLat + '&swLon=' + swLng + '&neLat=' + neLat + '&neLon=' + neLng + extragumf;
 
 	$.get(endpoint, function(data) { 
         displayStopListing(data); 
@@ -67,7 +68,7 @@ function displayStopListing(data){
 }
 
 function getBusListingForStop(stopId){
-    var endpoint = 'https://api-radon.tfl.gov.uk/StopPoint/' + stopId + '/Arrivals?' + borrowedIds;
+    var endpoint = 'https://api.tfl.gov.uk/StopPoint/' + stopId + '/Arrivals?' + borrowedIds;
 	$.get(endpoint, function(data) { 
         displayBusListing(data, stopId); 
     });
