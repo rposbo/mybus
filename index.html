@@ -67,7 +67,7 @@ function displayStopListing(data){
 }
 
 function getBusListingForStop(stopId){
-    var endpoint = 'https://api-argon.tfl.gov.uk/StopPoint/' + stopId + '/Arrivals?' + borrowedIds;
+    var endpoint = 'https://api-radon.tfl.gov.uk/StopPoint/' + stopId + '/Arrivals?' + borrowedIds;
 	$.get(endpoint, function(data) { 
         displayBusListing(data, stopId); 
     });
