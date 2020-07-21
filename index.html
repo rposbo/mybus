@@ -28,6 +28,7 @@ $(document).ready(function() {
 });
 
 const borrowedIds = 'app_id=8268063a&app_key=14f7f5ff5d64df2e88701cef2049c804';
+const apiRoot = 'https://api-tigris.tfl.gov.uk';
 
 function getStopListingForLocation(lat, lng){
 	var swLat, swLng, neLat, neLng;
@@ -37,7 +38,7 @@ function getStopListingForLocation(lat, lng){
 	neLng = lng + 0.01;
 
 	var extragumf = '&stopTypes=NaptanPublicBusCoachTram&modes=bus&' + borrowedIds;
-	var endpoint = 'https://api.tfl.gov.uk/StopPoint?swLat=' + swLat + '&swLon=' + swLng + '&neLat=' + neLat + '&neLon=' + neLng + extragumf;
+	var endpoint = apiRoot + '/StopPoint?swLat=' + swLat + '&swLon=' + swLng + '&neLat=' + neLat + '&neLon=' + neLng + extragumf;
 
 	$.get(endpoint, function(data) { 
         displayStopListing(data); 
@@ -68,7 +69,7 @@ function displayStopListing(data){
 }
 
 function getBusListingForStop(stopId){
-    var endpoint = 'https://api.tfl.gov.uk/StopPoint/' + stopId + '/Arrivals?' + borrowedIds;
+    var endpoint =  apiRoot + '/StopPoint/' + stopId + '/Arrivals?' + borrowedIds;
 	$.get(endpoint, function(data) { 
         displayBusListing(data, stopId); 
     });
