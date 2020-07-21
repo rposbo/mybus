@@ -118,30 +118,32 @@ function displayBusListing(data, stopId){
 	data.sort(function(a,b) {return (a.timeToStation > b.timeToStation) ? 1 : ((b.timeToStation > a.timeToStation) ? -1 : 0);} );
 
 	var stopEl = document.getElementById(stopId);
-	while (stopEl.firstChild) { stopEl.removeChild(stopEl.firstChild);	}
+	if (stopEl.querySelector("span")) {stopEl.removeChild(stopEl.querySelector("span"));}
 
+	var wrapper = document.createElement('span');
 	var h2 = document.createElement('h2');
     h2.innerText = "Buses Due";
-	stopEl.appendChild(h2);
+	wrapper.appendChild(h2);
 
 	forEach(data, function(i,item){
 		var cdText = document.createElement('span');
 		cdText.innerText  = countdownText(item.timeToStation);
 		cdText.setAttribute("class", "time");
-		stopEl.appendChild(cdText);
+		wrapper.appendChild(cdText);
 
 		var dest = document.createElement('span');
 		dest.innerText  = item.lineName + ' to ' + item.destinationName;
 		dest.setAttribute("class", "info");
-		stopEl.appendChild(dest);
+		wrapper.appendChild(dest);
 
 		var clock = document.createElement('span');
 		clock.innerText  = expectedArrivalTimeText(item.expectedArrival);
 		clock.setAttribute("class", "clock");
-		stopEl.appendChild(clock);
+		wrapper.appendChild(clock);
 		
-		stopEl.appendChild(document.createElement('br'));
+		wrapper.appendChild(document.createElement('br'));
     });
+	stopEl.appendChild(wrapper);
 }
 
 function countdownText(seconds){
