@@ -14,9 +14,45 @@ a:visited {color:blue;}
 .time {margin-right:1em; text-align:right;}
 .clock {float:right;}
 </style>
-<script language="javascript" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 <script language="javascript" type="text/javascript">
-$(document).ready(function() {
+function ready(fn) {
+  if (document.readyState != 'loading'){
+    fn();
+  } else if (document.addEventListener) {
+    document.addEventListener('DOMContentLoaded', fn);
+  } else {
+    document.attachEvent('onreadystatechange', function() {
+      if (document.readyState != 'loading')
+        fn();
+    });
+  }
+}
+
+function get(url, fn){
+	var request = new XMLHttpRequest();
+	request.open('GET', url, true);
+
+	request.onreadystatechange = function() {
+	if (this.readyState === 4) {
+			if (this.status >= 200 && this.status < 400) {
+				var data = JSON.parse(this.responseText);
+				fn(data);
+			} else {
+				console.log('get failed');
+			}
+		}
+	};
+
+	request.send();
+	request = null;
+}
+
+function forEach(array, fn) {
+  for (var i = 0; i < array.length; i++)
+    fn(i, array[i]);
+}
+
+ready(function() {
 	// get lat long
 	if (navigator.geolocation){
 		navigator.geolocation.getCurrentPosition(function (position) {
@@ -40,15 +76,18 @@ function getStopListingForLocation(lat, lng){
 	var extragumf = '&stopTypes=NaptanPublicBusCoachTram&modes=bus&' + borrowedIds;
 	var endpoint = apiRoot + '/StopPoint?swLat=' + swLat + '&swLon=' + swLng + '&neLat=' + neLat + '&neLon=' + neLng + extragumf;
 
-	$.get(endpoint, function(data) { 
+	get(endpoint, function(data) { 
         displayStopListing(data); 
     });
 }
 
 function displayStopListing(data){
 
+	var wrapper = document.getElementById("stopListing");
+
 	data.sort(function(a,b) {return (a.commonName > b.commonName) ? 1 : ((b.commonName > a.commonName) ? -1 : 0);} );
-	$.each(data, function(i,item){
+
+	forEach(data, function(i,item) {
 		var destination = "";
 		if (item.additionalProperties.length > 0)
 			for(var i=0; i<item.additionalProperties.length; i++)
@@ -57,20 +96,19 @@ function displayStopListing(data){
 					destination = 'to '+ item.additionalProperties[i].value;
 			}
 
-
-      $("<a/>")
-	  .text(item.commonName + ' (stop ' + item.stopLetter + ') ' + destination)
-	  .attr("onclick", "getBusListingForStop('" + item.id + "')")
-	  .attr("class", "stopListing")
-	  .attr("id", item.id)
-	  .attr("name","stop_" + item.id)
-	  .appendTo("#stopListing");
+		var a = document.createElement('a');
+		a.innerText = item.commonName + ' (stop ' + item.stopLetter + ') ' + destination;
+		a.setAttribute("onclick", "getBusListingForStop('" + item.id + "')");
+		a.setAttribute("class", "stopListing");
+		a.setAttribute("id", item.id);
+		a.setAttribute("name","stop_" + item.id);
+		wrapper.appendChild(a);
     });
 }
 
 function getBusListingForStop(stopId){
     var endpoint =  apiRoot + '/StopPoint/' + stopId + '/Arrivals?' + borrowedIds;
-	$.get(endpoint, function(data) { 
+	get(endpoint, function(data) { 
         displayBusListing(data, stopId); 
     });
 }
@@ -79,29 +117,30 @@ function displayBusListing(data, stopId){
 
 	data.sort(function(a,b) {return (a.timeToStation > b.timeToStation) ? 1 : ((b.timeToStation > a.timeToStation) ? -1 : 0);} );
 
-	$("#" + stopId).children().remove();
+	var stopEl = document.getElementById(stopId);
+	while (stopEl.firstChild) { stopEl.removeChild(stopEl.firstChild);	}
 
-    $("<h2 />").text("Buses Due").appendTo("#" + stopId);
+	var h2 = document.createElement('h2');
+    h2.innerText = "Buses Due";
+	stopEl.appendChild(h2);
 
-	$.each(data, function(i,item){
+	forEach(data, function(i,item){
+		var cdText = document.createElement('span');
+		cdText.innerText  = countdownText(item.timeToStation);
+		cdText.setAttribute("class", "time");
+		stopEl.appendChild(cdText);
 
-      $("<span/>")
-	  .text(countdownText(item.timeToStation))
-	  .attr("class", "time")
-	  .appendTo("#" + stopId);
+		var dest = document.createElement('span');
+		dest.innerText  = item.lineName + ' to ' + item.destinationName;
+		dest.setAttribute("class", "info");
+		stopEl.appendChild(dest);
 
-      $("<span/>")
-	  .text(item.lineName + ' to ' + item.destinationName)
-	  .attr("class", "info")
-	  .appendTo("#" + stopId);
-
-    $("<span/>")
-	  .text(expectedArrivalTimeText(item.expectedArrival))
-	  .attr("class", "clock")
-	  .appendTo("#" + stopId);
-
-      $("<br/>")
-	  .appendTo("#" + stopId);
+		var clock = document.createElement('span');
+		clock.innerText  = expectedArrivalTimeText(item.expectedArrival);
+		clock.setAttribute("class", "clock");
+		stopEl.appendChild(clock);
+		
+		stopEl.appendChild(document.createElement('br'));
     });
 }
 
