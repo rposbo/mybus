@@ -3,15 +3,13 @@
 <meta name="viewport" content="width=320" >
 <title>London Buses 🚍🚏</title>
 <style>
-body {font-family:calibri,verdana,tahoma,farah; font-size:12px; width:auto; max-width:100%;}
-#disclaimer {font-size:8px;}
-#disclaimer img {float:left;}
-#busListing {display:block;}
+body {font-family:calibri,verdana,tahoma,farah; font-size:1rem; width:auto; max-width:100%;}
 a:visited {color:blue;}
-#stopListing a {display:block; padding: 5px;margin: .4em 0;background-color:#ecffec; text-decoration:none; color:black;}
+#stopListing a {display:block; padding: 0.5rem; margin: .4rem 0;background-color:#ecffec; text-decoration:none; color:black;}
 #stopListing a:hover {background-color:#ececff;}
 #stopListing a:active {background-color:#ffecec;}
-.time {margin-right:1em; text-align:right;}
+.countdownWrapper {margin-top:1rem;}
+.time {margin-right:1rem; text-align:right;}
 .clock {float:right;}
 </style>
 <script language="javascript" type="text/javascript">
@@ -112,12 +110,10 @@ function displayBusListing(data, stopId){
 	data.sort(function(a,b) {return (a.timeToStation > b.timeToStation) ? 1 : ((b.timeToStation > a.timeToStation) ? -1 : 0);} );
 
 	var stopEl = document.getElementById(stopId);
-	if (stopEl.querySelector("span")) {stopEl.removeChild(stopEl.querySelector("span"));}
+	if (stopEl.querySelector(".countdownWrapper")) {stopEl.removeChild(stopEl.querySelector(".countdownWrapper"));}
 
-	var wrapper = document.createElement('span');
-	var h2 = document.createElement('h2');
-    h2.innerText = "Buses Due";
-	wrapper.appendChild(h2);
+	var wrapper = document.createElement('div');
+	wrapper.setAttribute("class", "countdownWrapper");
 
 	forEach(data, function(i,item){
 		var cdText = document.createElement('span');
@@ -159,7 +155,6 @@ function expectedArrivalTimeText(expectedArrivalTime) {
 <body>
 <h1>🚍🚏 Nearby</h1>
 <div id="stopListing"></div>
-<hr />
 <script async>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
