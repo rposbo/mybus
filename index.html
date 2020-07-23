@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=320" >
-<title>@rposbo : UNOFFICIAL Mobile TFL Bus Countdown Board</title>
+<title>London Buses 🚍🚏</title>
 <style>
 body {font-family:calibri,verdana,tahoma,farah; font-size:12px; width:auto; max-width:100%;}
 #disclaimer {font-size:8px;}
@@ -63,18 +63,11 @@ ready(function() {
 	}
 });
 
-const borrowedIds = 'app_id=8268063a&app_key=14f7f5ff5d64df2e88701cef2049c804';
-const apiRoot = 'https://api-tigris.tfl.gov.uk';
+const apiRoot = 'https://api.tfl.gov.uk';
 
-function getStopListingForLocation(lat, lng){
-	var swLat, swLng, neLat, neLng;
-	swLat = lat - 0.01;
-	swLng = lng - 0.01;
-	neLat = lat + 0.01;
-	neLng = lng + 0.01;
+function getStopListingForLocation(lat, lon){
 
-	var extragumf = '&stopTypes=NaptanPublicBusCoachTram&modes=bus&' + borrowedIds;
-	var endpoint = apiRoot + '/StopPoint?swLat=' + swLat + '&swLon=' + swLng + '&neLat=' + neLat + '&neLon=' + neLng + extragumf;
+	var endpoint = apiRoot + '/StopPoint?lat=' + lat + '&lon=' + lon + '&radius=400&stopTypes=NaptanPublicBusCoachTram&modes=bus';
 
 	get(endpoint, function(data) { 
         displayStopListing(data); 
@@ -84,10 +77,11 @@ function getStopListingForLocation(lat, lng){
 function displayStopListing(data){
 
 	var wrapper = document.getElementById("stopListing");
+	var stopPoints = data.stopPoints;
 
-	data.sort(function(a,b) {return (a.commonName > b.commonName) ? 1 : ((b.commonName > a.commonName) ? -1 : 0);} );
+	stopPoints.sort(function(a,b) {return (a.commonName > b.commonName) ? 1 : ((b.commonName > a.commonName) ? -1 : 0);} );
 
-	forEach(data, function(i,item) {
+	forEach(stopPoints, function(i,item) {
 		var destination = "";
 		if (item.additionalProperties.length > 0)
 			for(var i=0; i<item.additionalProperties.length; i++)
@@ -97,7 +91,7 @@ function displayStopListing(data){
 			}
 
 		var a = document.createElement('a');
-		a.innerText = item.commonName + ' (stop ' + item.stopLetter + ') ' + destination;
+		a.innerText = '🚏 ' + item.commonName + ' (stop ' + item.stopLetter + ') ' + destination;
 		a.setAttribute("onclick", "getBusListingForStop('" + item.id + "')");
 		a.setAttribute("class", "stopListing");
 		a.setAttribute("id", item.id);
@@ -107,7 +101,7 @@ function displayStopListing(data){
 }
 
 function getBusListingForStop(stopId){
-    var endpoint =  apiRoot + '/StopPoint/' + stopId + '/Arrivals?' + borrowedIds;
+    var endpoint =  apiRoot + '/StopPoint/' + stopId + '/Arrivals';
 	get(endpoint, function(data) { 
         displayBusListing(data, stopId); 
     });
@@ -163,9 +157,7 @@ function expectedArrivalTimeText(expectedArrivalTime) {
 </script>
 </head>
 <body>
-<div id="busListing"></div>
-<h1>Bus Stops Near You
-</h1>
+<h1>🚍🚏 Nearby</h1>
 <div id="stopListing"></div>
 <hr />
 <script async>
