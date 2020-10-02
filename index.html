@@ -30,10 +30,13 @@ function ready(fn) {
 }
 
 function get(url, fn){
-	var request = new XMLHttpRequest();
-	request.open('GET', url, true);
+    var request = new XMLHttpRequest();
+    console.log(url);
+    request.open('POST', 'https://tfl-proxy-rposbo.azurewebsites.net/api/GetMeTheDataFrom?code=H9zqvNZP/ormdiDfQZfl6hm5YGFSe0iaZJ/TqMqLFqWg76oI0u7jyQ==', true);
+	//request.open('POST', "Proxy.asmx/getMeTheDataFrom", true);
+	request.setRequestHeader("Content-Type", "application/javascript");
 
-	request.onreadystatechange = function() {
+    request.onreadystatechange = function() {
 	if (this.readyState === 4) {
 			if (this.status >= 200 && this.status < 400) {
 				var data = JSON.parse(this.responseText);
@@ -42,9 +45,9 @@ function get(url, fn){
 				console.log('get failed');
 			}
 		}
-	};
+    };
 
-	request.send();
+    request.send(`{"here":"${url}"}`);
 	request = null;
 }
 
