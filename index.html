@@ -4,16 +4,19 @@
 <title>London Buses 🚍🚏</title>
 <style>
 body {font-family: Arial, Helvetica, sans-serif; font-size:12pt; width:auto; max-width:100%;}
-h1 {display:grid; grid-template-columns: 5rem auto;}
+h1 {display:grid; grid-template-columns: 5rem auto 4rem;}
 #search {justify-self: end; align-self:center; width:100%}
 #filter {width:100%; }
 a:visited {color:blue;}
-#stopListing a {display:block; padding: 0.5rem; margin: .4rem 0;background-color:#ecffec; text-decoration:none; color:black;}
+#stopListing a {display:block; padding: 0.5rem; 
+margin: .4rem 0;background-color:#ecffec; text-decoration:none; color:black;}
 #stopListing a:hover {background-color:#ececff;}
 #stopListing a:active {background-color:#ffecec;}
-.countdownWrapper {margin-top:1rem; display:grid; grid-template-columns: 4rem auto 3rem;}
+.countdownWrapper {margin-top:1rem; display:grid; 
+grid-template-columns: 4rem auto 3rem;}
 .time {margin-right:0.7rem; text-align:right;}
 .clock {justify-self:end;}
+.is-selected {font-style:italic;}
 </style>
 <script language="javascript" type="text/javascript">
 function ready(fn) {
@@ -78,6 +81,22 @@ function getStopListingForLocation(lat, lon){
     });
 }
 
+function check(el) {
+	console.log('check')
+	console.log(el.classList)
+	if (el.classList.contains("is-selected")) {
+		el.classList.remove('is-selected');
+	}
+	else {
+		el.classList.add('is-selected');
+	}
+}	
+// Create variable for setTimeout
+var delay;
+  
+// Set number of milliseconds for longpress
+var longpress = 500;
+  
 function displayStopListing(data){
 
 	var wrapper = document.getElementById("stopListing");
@@ -100,6 +119,21 @@ function displayStopListing(data){
 		a.setAttribute("class", "stopListing");
 		a.setAttribute("id", item.id);
 		a.setAttribute("name","stop_" + item.id);
+
+		a.addEventListener('mousedown', function (e) {
+			console.log('down');
+			delay = setTimeout(check(e.target), longpress);
+		}, true);
+		
+		a.addEventListener('mouseup', function (e) {
+			console.log('up');
+			clearTimeout(delay);
+		});
+		
+		a.addEventListener('mouseout', function (e) {
+			console.log('out');
+			clearTimeout(delay);
+		});
 		wrapper.appendChild(a);
     });
 }
@@ -170,6 +204,7 @@ function filterStops() {
 <h1>
 	<span>🚍🚏</span>
 	<span id="search"><input type="text" id="filter" onkeyup="filterStops()" /></span>
+	<span>⭐</span>
 </h1>
 <div id="stopListing"></div>
 <script async>
