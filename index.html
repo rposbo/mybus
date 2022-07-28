@@ -1,42 +1,75 @@
 <html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=0">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=0">
 <title>London Buses 🚍🚏</title>
 <style>
-body {font-family: Arial, Helvetica, sans-serif; font-size:12pt; width:auto; max-width:100%;}
-h1 {display:grid; grid-template-columns: 5rem auto 4rem;}
-#search {justify-self: end; align-self:center; width:100%}
-#filter {width:100%; }
-a:visited {color:blue;}
-#stopListing a {display:block; padding: 0.5rem; 
-margin: .4rem 0;background-color:#ecffec; text-decoration:none; color:black;}
-#stopListing a:hover {background-color:#ececff;}
-#stopListing a:active {background-color:#ffecec;}
-.countdownWrapper {margin-top:1rem; display:grid; 
-grid-template-columns: 4rem auto 3rem;}
-.time {margin-right:0.7rem; text-align:right;}
-.clock {justify-self:end;}
-.is-selected {font-style:italic;}
-</style>
-<script language="javascript" type="text/javascript">
-function ready(fn) {
-  if (document.readyState != 'loading'){
-    fn();
-  } else if (document.addEventListener) {
-    document.addEventListener('DOMContentLoaded', fn);
-  } else {
-    document.attachEvent('onreadystatechange', function() {
-      if (document.readyState != 'loading')
-        fn();
-    });
-  }
-}
+            body {font-family: Arial, Helvetica, sans-serif; font-size:12pt; width:auto; max-width:100%;}
+            ul {list-style: none; padding: 0; margin: 0;}
+            h1 {display:grid; grid-template-columns: 5rem auto 4rem;}
+            #search {justify-self: end; align-self:center; width:100%}
+            #filter {width:100%; }
 
+            #stopListing > li {
+                background-color:#ecffec; 
+                padding: 0.5rem; 
+                display:grid; 
+                grid-template-columns: 1rem auto;
+                grid-template-rows: auto auto;
+                grid-template-areas: 
+                    "icon title"
+                    "countdown countdown";
+            }
+            .countdownIcon { grid-area: icon; }
+            .countdownTitle { grid-area: title;}
+            .countdownWrapper {
+                grid-area: countdown;
+                margin-top:1rem; 
+                display:grid; 
+                grid-template-columns: 4rem auto 3rem;
+            }
+            .clock {justify-self:end;}
+            .time {margin-right:0.5rem; text-align:right;}
+            .is-selected {font-style:italic;}
+        </style>
+    </head>
+<body>
+<h1>
+	<span onclick="showClosest()">🚍🚏</span>
+	<span id="search"><input type="text" id="filter" onkeyup="filterStops()"></span>
+	<span onclick="showFavourites()">⭐</span>
+</h1>
+<ul id="stopListing">
+</ul>
+
+<script language="javascript" type="text/javascript">
+const log = (data) => {console.log(data)};
+const apiRoot = 'https://api.tfl.gov.uk';
+const proxy = 'https://tfl-proxy-rposbo.azurewebsites.net/api/GetMeTheDataFrom?code=H9zqvNZP/ormdiDfQZfl6hm5YGFSe0iaZJ/TqMqLFqWg76oI0u7jyQ==';
+var delay;
+const longpress = 500;
+var favourites = [];
+var favStopsStorageReference = 'favStops_1';
+
+const start = (e) => { delay = setTimeout(check, longpress, e); }
+const cancel = () => { clearTimeout(delay); };
+
+function ready(fn) {
+    if (document.readyState != 'loading'){
+        fn();
+    } else if (document.addEventListener) {
+        document.addEventListener('DOMContentLoaded', fn);
+    } else {
+        document.attachEvent('onreadystatechange', function() {
+            if (document.readyState != 'loading')
+                fn();
+        });
+    }
+}    
+ 
 function get(url, fn){
     var request = new XMLHttpRequest();
-    console.log(url);
-    request.open('POST', 'https://tfl-proxy-rposbo.azurewebsites.net/api/GetMeTheDataFrom?code=H9zqvNZP/ormdiDfQZfl6hm5YGFSe0iaZJ/TqMqLFqWg76oI0u7jyQ==', true);
-	//request.open('POST', "Proxy.asmx/getMeTheDataFrom", true);
+    log(url);
+    request.open('POST', proxy, true);
 	request.setRequestHeader("Content-Type", "application/javascript");
 
     request.onreadystatechange = function() {
@@ -45,7 +78,7 @@ function get(url, fn){
 				var data = JSON.parse(this.responseText);
 				fn(data);
 			} else {
-				console.log('get failed');
+				log('get failed');
 			}
 		}
     };
@@ -53,169 +86,196 @@ function get(url, fn){
     request.send(`{"here":"${url}"}`);
 	request = null;
 }
-
+    
 function forEach(array, fn) {
-  for (var i = 0; i < array.length; i++)
+    for (var i = 0; i < array.length; i++)
     fn(i, array[i]);
 }
-
+    
 ready(function() {
-	// get lat long
-	if (navigator.geolocation){
-		navigator.geolocation.getCurrentPosition(function (position) {
-			getStopListingForLocation(position.coords.latitude,position.coords.longitude);
-		});
-	} else {
-		alert('could not get your location');
-	}
+    
+    var lsFavourites = localStorage.getItem(favStopsStorageReference);
+    try {if (lsFavourites != null) favourites.push(JSON.parse(lsFavourites));} catch (e){}
+
+    showClosest();
 });
 
-const apiRoot = 'https://api.tfl.gov.uk';
-
 function getStopListingForLocation(lat, lon){
+    var endpoint = apiRoot + '/StopPoint?lat=' + lat + '&lon=' + lon + '&radius=450&stopTypes=NaptanPublicBusCoachTram&modes=bus';
 
-	var endpoint = apiRoot + '/StopPoint?lat=' + lat + '&lon=' + lon + '&radius=450&stopTypes=NaptanPublicBusCoachTram&modes=bus';
-
-	get(endpoint, function(data) { 
+    get(endpoint, function(data) { 
         displayStopListing(data); 
     });
 }
 
-function check(el) {
-	console.log('check')
-	console.log(el.classList)
-	if (el.classList.contains("is-selected")) {
-		el.classList.remove('is-selected');
+function check(e) {
+    var listing = e.target.closest('li');
+
+	if (listing.classList.contains("is-selected")) {
+		listing.classList.remove('is-selected');
+		removeFromFavourites(listing.getAttribute('data-id'));
 	}
 	else {
-		el.classList.add('is-selected');
+		listing.classList.add('is-selected');
+		addToFavourites(listing.getAttribute('data-id'), listing.getAttribute('data-commonName'), listing.getAttribute('data-stopLetter'), listing.getAttribute('data-destination'));
 	}
-}	
-// Create variable for setTimeout
-var delay;
-  
-// Set number of milliseconds for longpress
-var longpress = 500;
+}
   
 function displayStopListing(data){
 
-	var wrapper = document.getElementById("stopListing");
-	var stopPoints = data.stopPoints;
+    var wrapper = document.getElementById("stopListing");
+    wrapper.innerHTML = null;
 
-	stopPoints.sort(function(a,b) {return (a.commonName > b.commonName) ? 1 : ((b.commonName > a.commonName) ? -1 : 0);} );
+    var stopPoints = data.stopPoints;
 
-	forEach(stopPoints, function(i,item) {
-		var destination = "";
-		if (item.additionalProperties.length > 0)
-			for(var i=0; i<item.additionalProperties.length; i++)
-			{
-				if (item.additionalProperties[i].key == "Towards")
-					destination = 'to '+ item.additionalProperties[i].value;
-			}
+    stopPoints.sort(function(a,b) {return (a.commonName > b.commonName) ? 1 : ((b.commonName > a.commonName) ? -1 : 0);} );
 
-		var a = document.createElement('a');
-		a.innerText = '🚏 ' + item.commonName + ' (stop ' + item.stopLetter + ') ' + destination;
-		a.setAttribute("onclick", "getBusListingForStop('" + item.id + "')");
-		a.setAttribute("class", "stopListing");
-		a.setAttribute("id", item.id);
-		a.setAttribute("name","stop_" + item.id);
+    forEach(stopPoints, function(i,item) {
+        var destination = "";
+        if (item.hasOwnProperty('additionalProperties') && item.additionalProperties.length > 0)
+            for(var i=0; i<item.additionalProperties.length; i++)
+            {
+                if (item.additionalProperties[i].key == "Towards")
+                    destination = 'to '+ item.additionalProperties[i].value;
+            }
 
-		a.addEventListener('mousedown', function (e) {
-			console.log('down');
-			delay = setTimeout(check(e.target), longpress);
-		}, true);
-		
-		a.addEventListener('mouseup', function (e) {
-			console.log('up');
-			clearTimeout(delay);
-		});
-		
-		a.addEventListener('mouseout', function (e) {
-			console.log('out');
-			clearTimeout(delay);
-		});
-		wrapper.appendChild(a);
+        if (item.hasOwnProperty('destination'))
+            destination = item.destination;
+
+        var icon = document.createElement('span');
+        icon.setAttribute("class", "countdownIcon");
+        icon.innerHTML = "🚏";
+
+        var title = document.createElement('span');
+        title.setAttribute("class", "countdownTitle");
+        title.innerHTML = item.commonName + ' (stop ' + item.stopLetter + ') ' + destination
+
+        var li = document.createElement('li');
+        li.setAttribute("id", item.id);
+        li.setAttribute("name","stop_" + item.id);
+        li.setAttribute("data-id", item.id);
+        li.setAttribute("data-commonName", item.commonName);
+        li.setAttribute("data-stopLetter", item.stopLetter);
+        li.setAttribute("data-destination", destination);
+
+        li.addEventListener('click', function (e) {getBusListingForStop(item.id);});
+
+        li.addEventListener("mousedown", start);
+        li.addEventListener("touchstart", start);
+        li.addEventListener("mouseout", cancel);
+        li.addEventListener("mouseup", cancel);
+        li.addEventListener("touchend", cancel);
+        li.addEventListener("touchleave", cancel);
+        li.addEventListener("touchcancel", cancel);
+
+        li.appendChild(icon);
+        li.appendChild(title);
+
+        wrapper.appendChild(li);
     });
 }
 
 function getBusListingForStop(stopId){
     var endpoint =  apiRoot + '/StopPoint/' + stopId + '/Arrivals';
-	get(endpoint, function(data) { 
+    get(endpoint, function(data) { 
         displayBusListing(data, stopId); 
     });
 }
 
 function displayBusListing(data, stopId){
 
-	data.sort(function(a,b) {return (a.timeToStation > b.timeToStation) ? 1 : ((b.timeToStation > a.timeToStation) ? -1 : 0);} );
+    data.sort(function(a,b) {return (a.timeToStation > b.timeToStation) ? 1 : ((b.timeToStation > a.timeToStation) ? -1 : 0);} );
 
-	var stopEl = document.getElementById(stopId);
-	if (stopEl.querySelector(".countdownWrapper")) {stopEl.removeChild(stopEl.querySelector(".countdownWrapper"));}
+    var stopEl = document.getElementById(stopId);
+    if (stopEl.querySelector(".countdownWrapper")) {stopEl.removeChild(stopEl.querySelector(".countdownWrapper"));}
 
-	var wrapper = document.createElement('div');
-	wrapper.setAttribute("class", "countdownWrapper");
+    var wrapper = document.createElement('ul');
+    wrapper.setAttribute("class", "countdownWrapper");
 
-	forEach(data, function(i,item){
-		var cdText = document.createElement('span');
-		cdText.innerText  = countdownText(item.timeToStation);
-		cdText.setAttribute("class", "time");
-		wrapper.appendChild(cdText);
+    forEach(data, function(i,item){
+        var cdText = document.createElement('span');
+        cdText.innerText  = countdownText(item.timeToStation);
+        cdText.setAttribute("class", "time");
+        wrapper.appendChild(cdText);
 
-		var dest = document.createElement('span');
-		dest.innerText  = item.lineName + ' to ' + item.destinationName;
-		dest.setAttribute("class", "info");
-		wrapper.appendChild(dest);
+        var dest = document.createElement('span');
+        dest.innerText  = item.lineName + ' to ' + item.destinationName;
+        dest.setAttribute("class", "info");
+        wrapper.appendChild(dest);
 
-		var clock = document.createElement('span');
-		clock.innerText  = expectedArrivalTimeText(item.expectedArrival);
-		clock.setAttribute("class", "clock");
-		wrapper.appendChild(clock);
-		
-		// wrapper.appendChild(document.createElement('br'));
+        var clock = document.createElement('span');
+        clock.innerText  = expectedArrivalTimeText(item.expectedArrival);
+        clock.setAttribute("class", "clock");
+        wrapper.appendChild(clock);
+        
+        // wrapper.appendChild(document.createElement('br'));
     });
-	stopEl.appendChild(wrapper);
+    stopEl.appendChild(wrapper);
 }
 
 function countdownText(seconds){
-	var mins = seconds/60;
-	return mins > 1 ? Math.floor(mins) + ' min' : 'due';
+    var mins = seconds/60;
+    return mins > 1 ? Math.floor(mins) + ' min' : 'due';
 }
 
 function expectedArrivalTimeText(expectedArrivalTime) {
-	if (expectedArrivalTime == null) {return "";}
+    if (expectedArrivalTime == null) {return "";}
 
-	var d = new Date(expectedArrivalTime);
-	var h = d.getHours() < 10 ? "0" + d.getHours() : d.getHours();
-	var m = d.getMinutes() < 10 ? "0" + d.getMinutes() : d.getMinutes();
-	return h + ":" + m;
+    var d = new Date(expectedArrivalTime);
+    var h = d.getHours() < 10 ? "0" + d.getHours() : d.getHours();
+    var m = d.getMinutes() < 10 ? "0" + d.getMinutes() : d.getMinutes();
+    return h + ":" + m;
 }
 
 function filterStops() {
-	var searchText = document.getElementById('filter').value.toLowerCase();
+    var searchText = document.getElementById('filter').value.toLowerCase();
 
-	document.querySelectorAll('.stopListing').forEach(function(el){
-		var found = el.innerText.toLowerCase().indexOf(searchText);
-		el.style.display = found<0 ? 'none' : 'block';
-	});
+    document.querySelectorAll('.stopListing').forEach(function(el){
+        var found = el.innerText.toLowerCase().indexOf(searchText);
+        el.style.display = found<0 ? 'none' : 'block';
+    });
 }
-</script>
-</head>
-<body>
-<h1>
-	<span>🚍🚏</span>
-	<span id="search"><input type="text" id="filter" onkeyup="filterStops()" /></span>
-	<span>⭐</span>
-</h1>
-<div id="stopListing"></div>
-<script async>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-  ga('create', 'UA-55736935-1', 'auto');
-  ga('send', 'pageview');
+function addToFavourites(id, commonName, stopLetter, destination) {
+    if (favourites && favourites.filter(f => f.id == id).length == 0) {
+        
+        log(favourites);
 
+        favourites.push({
+            id: id,
+            commonName: commonName,
+            stopLetter: stopLetter,
+            destination: destination
+        });
+        
+        log(favourites);
+        localStorage.setItem(favStopsStorageReference, JSON.stringify(favourites));
+    }
+}
+
+function removeFromFavourites(id) {
+    favourites =  favourites.filter(f => f.id != id)
+    log(favourites);
+	localStorage.setItem(favStopsStorageReference, JSON.stringify(favourites));
+}
+
+function getFavourites() {
+    return JSON.parse(localStorage.getItem(favStopsStorageReference));
+}
+
+function showFavourites() {
+    displayStopListing({stopPoints: getFavourites()});
+}
+
+function showClosest() {
+    if (navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(function (position) {
+           getStopListingForLocation(position.coords.latitude,position.coords.longitude);
+        });
+    } else {
+        alert('could not get your location');
+    }
+}
 </script>
 </body>
 </html>
