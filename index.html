@@ -11,9 +11,10 @@
 
             #stopListing > li {
                 background-color:#ecffec; 
-                padding: 0.5rem; 
+                padding: 0.5rem;
+				margin-bottom:0.5rem;
                 display:grid; 
-                grid-template-columns: 1rem auto;
+                grid-template-columns: 1.1rem auto;
                 grid-template-rows: auto auto;
                 grid-template-areas: 
                     "icon title"
@@ -42,13 +43,13 @@
 </ul>
 
 <script language="javascript" type="text/javascript">
-const log = (data) => {console.log(data)};
+const log = (data) => window.location.hostname == "localhost" ? console.log(data) : null;
 const apiRoot = 'https://api.tfl.gov.uk';
 const proxy = 'https://tfl-proxy-rposbo.azurewebsites.net/api/GetMeTheDataFrom?code=H9zqvNZP/ormdiDfQZfl6hm5YGFSe0iaZJ/TqMqLFqWg76oI0u7jyQ==';
 var delay;
 const longpress = 500;
 var favourites = [];
-var favStopsStorageReference = 'favStops_1';
+var favStopsStorageReference = 'favStops_2';
 
 const start = (e) => { delay = setTimeout(check, longpress, e); }
 const cancel = () => { clearTimeout(delay); };
@@ -93,9 +94,9 @@ function forEach(array, fn) {
 }
     
 ready(function() {
-    
+    clearStorage();
     var lsFavourites = localStorage.getItem(favStopsStorageReference);
-    try {if (lsFavourites != null) favourites.push(JSON.parse(lsFavourites));} catch (e){}
+    try {if (lsFavourites != null) favourites = JSON.parse(lsFavourites);} catch (e){}
 
     showClosest();
 });
@@ -151,8 +152,10 @@ function displayStopListing(data){
         title.innerHTML = item.commonName + ' (stop ' + item.stopLetter + ') ' + destination
 
         var li = document.createElement('li');
+		if (favourites.filter(f => f.id == item.id).length > 0) {li.classList.add("is-selected")}
         li.setAttribute("id", item.id);
         li.setAttribute("name","stop_" + item.id);
+
         li.setAttribute("data-id", item.id);
         li.setAttribute("data-commonName", item.commonName);
         li.setAttribute("data-stopLetter", item.stopLetter);
@@ -230,7 +233,7 @@ function expectedArrivalTimeText(expectedArrivalTime) {
 function filterStops() {
     var searchText = document.getElementById('filter').value.toLowerCase();
 
-    document.querySelectorAll('.stopListing').forEach(function(el){
+    document.querySelectorAll('#stopListing li').forEach(function(el){
         var found = el.innerText.toLowerCase().indexOf(searchText);
         el.style.display = found<0 ? 'none' : 'block';
     });
@@ -275,6 +278,15 @@ function showClosest() {
     } else {
         alert('could not get your location');
     }
+}
+
+function clearStorage () {
+	for(var i=0; i <= localStorage.length; i ++) {
+		var l = localStorage.key(i);
+		if (l != favStopsStorageReference) {
+			localStorage.removeItem(l)
+		}
+	}
 }
 </script>
 </body>
